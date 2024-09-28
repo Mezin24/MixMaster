@@ -4,3 +4,4 @@ export { Error } from './Error';
 export { HomeLayout } from './HomeLayout';
 export { Landing } from './Landing';
 export { Newsletter } from './Newsletter';
+export { SinglePageError } from './SinglePageError';
