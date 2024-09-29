@@ -1,17 +1,37 @@
 import axios from 'axios';
-import { Link, useLoaderData } from 'react-router-dom';
+import { Link, useLoaderData, Navigate } from 'react-router-dom';
 import Wrapper from '../assets/wrappers/CocktailPage';
+import { useQuery } from '@tanstack/react-query';
 
 const singleCocktailUrl =
   'https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=';
 
-export const loader = async ({ params }) => {
-  const { data } = await axios.get(`${singleCocktailUrl}${params.id}`);
-  return { drink: data?.drinks?.[0], id: params.id };
-};
+function searchCocktailQuery(id) {
+  return {
+    queryKey: ['cocktail', id],
+    queryFn: async () => {
+      const { data } = await axios.get(`${singleCocktailUrl}${id}`);
+      console.log(data?.drinks?.[0]);
+      return data?.drinks?.[0];
+    },
+  };
+}
+
+export const loader =
+  (queryClient) =>
+  async ({ params }) => {
+    await queryClient.ensureQueryData(searchCocktailQuery(params.id));
+    return { id: params.id };
+  };
 
 export const Cocktail = () => {
-  const { drink, id } = useLoaderData();
+  const { id } = useLoaderData();
+  const { data: drink } = useQuery(searchCocktailQuery(id));
+  console.log(drink);
+
+  if (!drink) {
+    return <Navigate to='/' />;
+  }
 
   const {
     strDrink: name,
@@ -21,6 +41,10 @@ export const Cocktail = () => {
     strInstructions: instructions,
     strCategory: category,
   } = drink;
+
+  const ingredients = Object.entries(drink)
+    .filter(([key, value]) => key.startsWith('strIngredient') && value)
+    .map(([_, value]) => value);
 
   return (
     <Wrapper>
@@ -48,6 +72,10 @@ export const Cocktail = () => {
           <p>
             <span className='drink-data'>glass: </span>
             {glass}
+          </p>
+          <p>
+            <span className='drink-data'>ingredients: </span>
+            {ingredients.join(', ')}
           </p>
           <p>
             <span className='drink-data'>instructions: </span>
